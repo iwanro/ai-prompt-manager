@@ -41,8 +41,7 @@ const saveDB = () => {
 // --- Middleware ---
 const allowedOrigins = [
     'https://ai-prompt-manager-api.onrender.com',
-    // TODO: Add your Chrome Extension ID here later
-    // 'chrome-extension://<your-extension-id>'
+    'chrome-extension://lopcpcnfnkoggdfojnkfphpopfnbiign'
 ];
 
 app.use(cors({
@@ -160,6 +159,7 @@ app.post('/api/set-premium', (req, res) => {
 });
 
 
+app.options('/auth/verify-google-token', cors()); // Handle preflight OPTIONS requests
 app.post('/auth/verify-google-token', async (req, res) => {
     const { token } = req.body;
     if (!token) {

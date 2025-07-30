@@ -1,0 +1,10 @@
+popup.html:1 Access to fetch at 'https://ai-prompt-manager-api.onrender.com/auth/verify-google-token' from origin 'chrome-extension://lopcpcnfnkoggdfojnkfphpopfnbiign' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ai-prompt-manager-api.onrender.com/auth/verify-google-token:1  Failed to load resource: net::ERR_FAILED
+popup.js:95 Error verifying token with backend: TypeError: Failed to fetch
+    at verifyTokenWithBackend (popup.js:78:36)
+    at handleAuthAndLoadPrompts (popup.js:45:45)
+verifyTokenWithBackend @ popup.js:95
+popup.js:54 Error during authentication or premium status check: TypeError: Failed to fetch
+    at verifyTokenWithBackend (popup.js:78:36)
+    at handleAuthAndLoadPrompts (popup.js:45:45)
+handleAuthAndLoadPrompts @ popup.js:54
