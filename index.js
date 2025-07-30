@@ -159,8 +159,10 @@ app.post('/api/set-premium', (req, res) => {
 });
 
 
-app.options('/auth/verify-google-token', cors()); // Handle preflight OPTIONS requests
 app.post('/auth/verify-google-token', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', 'chrome-extension://lopcpcnfnkoggdfojnkfphpopfnbiign');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     const { token } = req.body;
     if (!token) {
         return res.status(400).json({ success: false, message: 'Token is required.' });

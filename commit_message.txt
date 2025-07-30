@@ -1,1 +1,1 @@
-Add /auth/verify-google-token endpoint and google-auth-library
+Fix: Attempt to resolve CORS issue by adding specific CORS handler for /auth/verify-google-token and reverting broad CORS change.
