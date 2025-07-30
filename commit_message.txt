@@ -1,1 +1,1 @@
-Fix: Attempt to resolve CORS issue by adding specific CORS handler for /auth/verify-google-token and reverting broad CORS change.
+Fix: Explicitly set CORS headers for /auth/verify-google-token route.
