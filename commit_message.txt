@@ -1,1 +1,1 @@
-Fix: Explicitly set CORS headers for /auth/verify-google-token route.
+Debug: Temporarily allow all CORS origins and log received origin for debugging.
