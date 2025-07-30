@@ -85,7 +85,8 @@ passport.deserializeUser((id, done) => {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback' // This path must match your setup
+    callbackURL: '/auth/google/callback',
+    secure: true // Force HTTPS for callback URL
   },
   (accessToken, refreshToken, profile, done) => {
     // Find or create user in the database
