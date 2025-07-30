@@ -160,6 +160,55 @@ app.post('/api/set-premium', (req, res) => {
 });
 
 
+app.post('/auth/verify-google-token', async (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+        return res.status(400).json({ success: false, message: 'Token is required.' });
+    }
+
+    try {
+        const CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // Your Google Client ID
+        const { OAuth2Client } = require('google-auth-library');
+        const client = new OAuth2Client(CLIENT_ID);
+
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+
+        // Find or create user in your database
+        let user = db.users.find(u => u.id === userid);
+
+        if (!user) {
+            user = {
+                id: userid,
+                displayName: payload.name,
+                emails: [{ value: payload.email }],
+                photos: [{ value: payload.picture }],
+                isPremium: false // Default to non-premium
+            };
+            db.users.push(user);
+            saveDB();
+        }
+
+        // Manually log in the user with Passport
+        req.login(user, (err) => {
+            if (err) {
+                console.error('Error logging in user:', err);
+                return res.status(500).json({ success: false, message: 'Failed to log in user.' });
+            }
+            res.json({ success: true, isPremium: user.isPremium });
+        });
+
+    } catch (error) {
+        console.error('Error verifying Google token:', error);
+        res.status(401).json({ success: false, message: 'Invalid or expired token.' });
+    }
+});
+
+
 app.get('/', (req, res) => {
     res.send('Backend server is running!');
 });
