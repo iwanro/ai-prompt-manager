@@ -4,20 +4,61 @@ const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
 const cors = require('cors');
+const fs = require('fs');
+const bodyParser = require('body-parser');
 
 // Import strategies
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 // Add GitHub and Facebook strategies here later
 
 const app = express();
+app.set('trust proxy', 1); // Trust the first proxy
 const PORT = process.env.PORT || 3000;
 
+// --- Database ---
+let db = { users: [] };
+const DB_PATH = './db.json';
+
+// Load the database
+try {
+    const data = fs.readFileSync(DB_PATH, 'utf8');
+    db = JSON.parse(data);
+} catch (err) {
+    if (err.code === 'ENOENT') {
+        console.log('db.json not found, creating a new one.');
+        fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+    } else {
+        console.error('Error reading db.json:', err);
+    }
+}
+
+// Function to save the database
+const saveDB = () => {
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+};
+
+
 // --- Middleware ---
+const allowedOrigins = [
+    'https://ai-prompt-manager-api.onrender.com',
+    // TODO: Add your Chrome Extension ID here later
+    // 'chrome-extension://<your-extension-id>'
+];
+
 app.use(cors({
-    origin: '*', // IMPORTANT: For production, restrict this to your extension's ID
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
-
+app.use(bodyParser.json());
 app.use(session({
     secret: process.env.SESSION_SECRET, // A random string to sign the session ID cookie
     resave: false,
@@ -31,12 +72,12 @@ app.use(passport.session());
 
 // This saves the user ID to the session
 passport.serializeUser((user, done) => {
-    done(null, user);
+    done(null, user.id);
 });
 
 // This retrieves the user details from the session
-passport.deserializeUser((user, done) => {
-    // In a real app, you would fetch user from a database here
+passport.deserializeUser((id, done) => {
+    const user = db.users.find(u => u.id === id);
     done(null, user);
 });
 
@@ -47,11 +88,27 @@ passport.use(new GoogleStrategy({
     callbackURL: '/auth/google/callback' // This path must match your setup
   },
   (accessToken, refreshToken, profile, done) => {
-    // This function is called after successful authentication
-    // Here you would find or create a user in your database
-    console.log('Google profile:', profile);
-    // For now, we just pass the profile to the next step
-    return done(null, profile);
+    // Find or create user in the database
+    let user = db.users.find(u => u.id === profile.id);
+
+    if (user) {
+        // Update user profile information
+        user.displayName = profile.displayName;
+        user.photos = profile.photos;
+    } else {
+        // Create a new user
+        user = {
+            id: profile.id,
+            displayName: profile.displayName,
+            emails: profile.emails,
+            photos: profile.photos,
+            isPremium: false // Default to non-premium
+        };
+        db.users.push(user);
+    }
+    
+    saveDB();
+    return done(null, user);
   }
 ));
 
@@ -67,8 +124,6 @@ app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login-failed' }),
   (req, res) => {
     // Successful authentication!
-    // Here you would generate a JWT and send it back to the extension.
-    // For now, we'll just send a success message.
     res.send('<h1>Login Successful!</h1><p>You can close this tab.</p>');
   }
 );
@@ -81,14 +136,28 @@ app.get('/api/user', (req, res) => {
             user: {
                 name: req.user.displayName,
                 photo: req.user.photos[0].value,
-                // Add premium status from your database here
-                isPremium: false 
+                isPremium: req.user.isPremium
             }
         });
     } else {
         res.status(401).json({ success: false, message: 'User not authenticated' });
     }
 });
+
+// Route to grant premium access (for internal use)
+app.post('/api/set-premium', (req, res) => {
+    const { userId } = req.body;
+    const user = db.users.find(u => u.id === userId);
+
+    if (user) {
+        user.isPremium = true;
+        saveDB();
+        res.json({ success: true, message: `User ${user.displayName} is now premium.` });
+    } else {
+        res.status(404).json({ success: false, message: 'User not found.' });
+    }
+});
+
 
 app.get('/', (req, res) => {
     res.send('Backend server is running!');
