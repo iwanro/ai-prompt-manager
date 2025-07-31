@@ -1,1 +1,1 @@
-fix: Handle token verification in premium.js
+fix: Use axios to correctly verify Google Access Token

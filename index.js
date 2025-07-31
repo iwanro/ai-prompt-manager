@@ -159,36 +159,37 @@ app.post('/api/set-premium', (req, res) => {
 });
 
 
+const axios = require('axios');
+
 app.post('/auth/verify-google-token', async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', 'chrome-extension://lopcpcnfnkoggdfojnkfphpopfnbiign');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    const { token } = req.body;
+    const { token } = req.body; // This is the Access Token from the frontend
     if (!token) {
         return res.status(400).json({ success: false, message: 'Token is required.' });
     }
 
     try {
-        const CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // Your Google Client ID
-        const { OAuth2Client } = require('google-auth-library');
-        const client = new OAuth2Client(CLIENT_ID);
+        // Verify the access token by making a request to Google's tokeninfo endpoint
+        const response = await axios.get(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
+        const googleUser = response.data;
 
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
+        // The 'sub' field is the unique Google user ID
+        const userId = googleUser.sub;
 
         // Find or create user in your database
-        let user = db.users.find(u => u.id === userid);
+        let user = db.users.find(u => u.id === userId);
 
         if (!user) {
+            // If user is not found, we need more details. We can get them from the people API
+            const peopleApiResponse = await axios.get('https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,photos', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const profile = peopleApiResponse.data;
+            
             user = {
-                id: userid,
-                displayName: payload.name,
-                emails: [{ value: payload.email }],
-                photos: [{ value: payload.picture }],
+                id: userId,
+                displayName: profile.names && profile.names.length > 0 ? profile.names[0].displayName : 'Google User',
+                emails: profile.emailAddresses,
+                photos: profile.photos,
                 isPremium: false // Default to non-premium
             };
             db.users.push(user);
@@ -201,11 +202,12 @@ app.post('/auth/verify-google-token', async (req, res) => {
                 console.error('Error logging in user:', err);
                 return res.status(500).json({ success: false, message: 'Failed to log in user.' });
             }
+            // Respond with the user's premium status
             res.json({ success: true, isPremium: user.isPremium });
         });
 
     } catch (error) {
-        console.error('Error verifying Google token:', error);
+        console.error('Error verifying Google access token:', error.response ? error.response.data : error.message);
         res.status(401).json({ success: false, message: 'Invalid or expired token.' });
     }
 });
