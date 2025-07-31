@@ -1,1 +1,1 @@
-chore: Add diagnostic log to track version
+test: Change root endpoint message to verify deployment

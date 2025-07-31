@@ -218,7 +218,7 @@ app.post('/api/set-premium', (req, res) => {
 
 
 app.get('/', (req, res) => {
-    res.send('Backend server is running!');
+    res.send('AI Prompt Manager Backend, Version 1.0.6 - DEPLOYMENT TEST');
 });
 
 
