@@ -183,12 +183,16 @@ app.post('/api/set-premium', (req, res) => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const profile = peopleApiResponse.data;
+
+            const displayName = profile.names && profile.names.length > 0 ? profile.names[0].displayName : 'Google User';
+            const emails = profile.emailAddresses || [];
+            const photos = profile.photos || [];
             
             user = {
                 id: userId,
-                displayName: profile.names && profile.names.length > 0 ? profile.names[0].displayName : 'Google User',
-                emails: profile.emailAddresses,
-                photos: profile.photos,
+                displayName: displayName,
+                emails: emails,
+                photos: photos,
                 isPremium: false // Default to non-premium
             };
             db.users.push(user);
