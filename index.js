@@ -6,6 +6,7 @@ const session = require('express-session');
 const cors = require('cors');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const axios = require('axios');
 
 // Import strategies
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
@@ -159,9 +160,7 @@ app.post('/api/set-premium', (req, res) => {
 });
 
 
-const axios = require('axios');
 
-app.post('/auth/verify-google-token', async (req, res) => {
     const { token } = req.body; // This is the Access Token from the frontend
     if (!token) {
         return res.status(400).json({ success: false, message: 'Token is required.' });
