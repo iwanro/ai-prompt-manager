@@ -1,1 +1,1 @@
-Debug: Temporarily allow all CORS origins and log received origin for debugging.
+fix: Correctly verify Google token
