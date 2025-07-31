@@ -1,1 +1,1 @@
-fix: Add robust checks for new user creation
+chore: Add diagnostic log to track version

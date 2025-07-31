@@ -1,4 +1,5 @@
 
+console.log('--- RUNNING LATEST VERSION: 1.0.5 ---');
 require('dotenv').config();
 const express = require('express');
 const passport = require('passport');
