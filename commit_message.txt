@@ -1,1 +1,1 @@
-fix: Correctly verify Google token
+fix: Handle token verification in premium.js
